@@ -13,18 +13,19 @@ class DiffFunc {
 };
 
 class LinearFunc : public DiffFunc{
+	bool owns_matp=false;
 	Mat<float>* matp;
 	public:
 	LinearFunc (Mat<float>& L) {
 		matp =  &L;
 	}
 	LinearFunc (int in, int out) {
-		// Bug
 		Mat<float>* Mp = new Mat<float>(in, out);
 		matp =  Mp;
+		owns_matp = true; // since we are creating the matrix in the constructor we are encharged of deleting it
 	}
 	~LinearFunc() {
-		delete matp;
+		if(owns_matp) {delete matp;}
 	}
 	Mat<float> at(Mat<float>&x) {
 		Mat<float>& a = *matp;
@@ -57,7 +58,7 @@ class Max0: public DiffFunc{
 		}
 		return d;
 	}
-};
+} max0;
 
 class SquareElementWise: public DiffFunc{
 	public:
@@ -91,9 +92,9 @@ class Composition: public DiffFunc {
 	}
 
 	Mat<float> at(Mat<float>& x) {
-		cout << "starting func composition";
-		cout << "step: 0 - ";
 		DiffFunc* fp = *func_list;
+		cout << "starting func composition with first func address " << fp << endl;
+		cout << "step: 0 - \n";
 		Mat<float> y=fp->at(x);
 		y.print();
 		for (int t=1; t< length; t++){
@@ -125,26 +126,25 @@ class NN: public DiffFunc{
 		int layer_num = 3+2; // 3 linear layers + 2 non linearities
 		DiffFunc** func_list = new DiffFunc*[layer_num]; 
 
-		Max0 max0;
-		LinearFunc L1(in_dim, hidden_dim);
-		*(func_list) = &L1;
+		LinearFunc* L1p = new LinearFunc(in_dim, hidden_dim);
+		*(func_list) = L1p;
 		*(func_list+1) = &max0;
-		LinearFunc L2(hidden_dim, hidden_dim);
-		*(func_list+2) = &L2;
+		LinearFunc* L2p = new LinearFunc(hidden_dim, hidden_dim);
+		*(func_list+2) = L2p;
 		*(func_list+3) = &max0;
-		LinearFunc L3(hidden_dim, out_dim);
-		*(func_list+4) = &L3;
+		LinearFunc* L3p = new LinearFunc(hidden_dim, out_dim);
+		*(func_list+4) = L3p;
 
 		// Initialize linear layers
-		L1.random(0, 1);
-		L2.random(0, 1);
-		L3.random(0, 1);
+		L1p->random(0, 1);
+		L2p->random(0, 1);
+		L3p->random(0, 1);
 		cp = new Composition(func_list, layer_num);
 	}
-	Mat<float> at(Mat<float> x) {
+	Mat<float> at(Mat<float>& x) {
 		return cp->at(x);
 	}
-	Mat<float> differential_at(Mat<float> x) {
+	Mat<float> differential_at(Mat<float>& x) {
 		return cp->differential_at(x);
 	}
 
@@ -182,6 +182,7 @@ int main () {
 	LinearFunc lin(m);
 	DiffFunc* func_list[] = {&max0, &square};
 	Composition stack(func_list, 2);
+	NN nn(3, 100, 1);
 
 	cout << "the square(x): \n";
 	square.at(x).print();
@@ -208,6 +209,13 @@ int main () {
 	cout << "the diff of stack(x): \n";
 	stack.differential_at(x).print();
 	cout << " ----- \n";
+
+	cout << "the nn(x): \n";
+	nn.at(x).print();
+	cout << "the diff of stack(x): \n";
+	nn.differential_at(x).print();
+	cout << " ----- \n";
+
 
 	return 0;
 };
