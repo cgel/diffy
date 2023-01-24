@@ -33,7 +33,6 @@ class LinearFunc : public DiffFunc{
 	tuple<Mat<float>,Mat<float>> differential_at(Mat<float>& M,Mat<float>& x) {
 		// Returns two matrices, linearly approximating the change in the output given the inputs
 		// Since the first input is a matrix, the linear approximation assumes it's been flattened. 
-		cout << "inside LinearFunc.differential_at\n";
 		Mat<float> L (M.h, M.size); // super inneficient to implement this way. This matrix will mostly be 0s
 		for (int i=0; i<x.h; i++) {
 			for (int j=0; j<M.h; j++) {
@@ -42,7 +41,7 @@ class LinearFunc : public DiffFunc{
 		}
 		return {L, M};
 	}
-};
+} linear;
 
 class Max0: public DiffFunc{
 	public:
@@ -126,37 +125,71 @@ class Composition: public DiffFunc {
 	}
 };
 
-// class NN: public DiffFunc{
-// 	Composition * cp;
-	// public:
-	// NN(int in_dim, int hidden_dim, int out_dim) {
-	// 	int layer_num = 3+2; // 3 linear layers + 2 non linearities
-	// 	DiffFunc** func_list = new DiffFunc*[layer_num]; 
+// For now we won't use polymorphism with the differentialbe NN function
+class NN_3layer {
+	public:
+	Mat<float> at(Mat<float>& x, Mat<float>&A, Mat<float>&B, Mat<float>&C) {
+		Mat<float> h = linear.at(A,x);
+		h = max0.at(h);
+		h = linear.at(B,h);
+		h = max0.at(h);
+		h = linear.at(C,h);
+		return h;
+	}
+	tuple<Mat<float>,Mat<float>,Mat<float>,Mat<float>> differential_at(Mat<float>& x, Mat<float>&A, Mat<float>&B, Mat<float>&C) {
+		// We need to keep track of 3 objects. As we compute further hidden layers, we want to know
+		// the derivatives of h w.r.t A, B and C
+		// Mat<float> diff_h_wrt_A,  = linear.at(A,x);
+		// auto [diff_A_to_h, diff_wrt_A] = linear.differential_at(A, x); 
+		// Mat<float> h = linear.at(A,x);
+		// Mat<float> diff_h1_to_h2 = square.differential_at(h);
+		// h = square.at(h);
 
-	// 	LinearFunc* L1p = new LinearFunc(in_dim, hidden_dim);
-	// 	*(func_list) = L1p;
-	// 	*(func_list+1) = &max0;
-	// 	LinearFunc* L2p = new LinearFunc(hidden_dim, hidden_dim);
-	// 	*(func_list+2) = L2p;
-	// 	*(func_list+3) = &max0;
-	// 	LinearFunc* L3p = new LinearFunc(hidden_dim, out_dim);
-	// 	*(func_list+4) = L3p;
+		// h = linear.at(h);
 
-	// 	// Initialize linear layers
-	// 	L1p->random(0, 1);
-	// 	L2p->random(0, 1);
-	// 	L3p->random(0, 1);
-	// 	cp = new Composition(func_list, layer_num);
-	// }
-	// Mat<float> at(Mat<float>& x) {
-	// 	return cp->at(x);
-	// }
-	// Mat<float> differential_at(Mat<float>& x) {
-	// 	return cp->differential_at(x);
-	// }
-// };
+		Mat<float> h_by_A, h_by_B, h_by_C, h_by_x, h, h_by_h;
+		tie(h_by_A, h_by_x) = linear.differential_at(A,x);
+		h = linear.at(A,x);
 
+		h_by_h = max0.differential_at(h);
+		h_by_A = h_by_h * h_by_A;
+		h_by_x = h_by_h * h_by_x;
+		h = max0.at(h);
 
+		tie(h_by_B, h_by_h) = linear.differential_at(B,h);
+		h_by_A = h_by_h * h_by_A;
+		h_by_x = h_by_h * h_by_x;
+		h = linear.at(B,h);
+
+		h_by_h = max0.differential_at(h);
+		h_by_B = h_by_h * h_by_B;
+		h_by_A = h_by_h * h_by_A;
+		h_by_x = h_by_h * h_by_x;
+		h = max0.at(h);
+
+		tie(h_by_C, h_by_h) = linear.differential_at(C,h);
+		h_by_B = h_by_h * h_by_B;
+		h_by_A = h_by_h * h_by_A;
+		h_by_x = h_by_h * h_by_x;
+		h = linear.at(C,h);
+
+		return {h_by_x, h_by_A, h_by_B, h_by_C};
+	}
+} nn;
+
+void test_nn() {
+	Mat<float> A(3,3), B(3,3), C(1,3), x(3,1);
+	A.random(); B.random(); C.random();
+	x.ind(0,0) = 1; x.ind(1,0) = -1; x.ind(2,0) = 2;
+	Mat<float> y = nn.at(x,A,B,C);
+	cout << "Output of the NN is: \n";
+	y.print();
+	cout << " ======= \n";
+	cout << "Computing the differential of the NN: \n";
+	nn.differential_at(x,A,B,C);
+	cout << " ======= \n";
+
+}
 
 int main () {
 	cout << "Hello! \n";
@@ -226,6 +259,7 @@ int main () {
 	// nn.differential_at(x).print();
 	// cout << " ----- \n";
 
+	test_nn();
 
 	return 0;
 };
