@@ -20,6 +20,8 @@ class Mat {
 			for (int i=0; i<size; i++ ) {*(data+i) = 0;}
 		}
 
+		Mat():Mat(1,1) {}
+
 		Mat(Mat& A) {
 			h=A.h;
 			w=A.w;
@@ -62,6 +64,10 @@ class Mat {
             }
             return *this;
         }
+        Mat& random() {
+            return random(0,1);
+        }
+
 
 		void print() {
 			for (int i=0; i<size; i++ ){
