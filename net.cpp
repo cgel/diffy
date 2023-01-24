@@ -1,40 +1,47 @@
 #include <iostream>
 #include <assert.h>
+#include <tuple>
 #include "./mat.cpp"
 using namespace std;
 
 // A differentiable funciton. Both, it's inputs and outputs are matrices.
 class DiffFunc {
 	public:
-	// virtual Mat<float> at(Mat<float>&) {return Mat<float>(2,1);}
-	virtual Mat<float> at(Mat<float>&) =0;
-	// virtual Mat<float> differential_at(Mat<float>&) {return Mat<float>(2,1);}
-	virtual Mat<float> differential_at(Mat<float>&) =0;
+	virtual Mat<float> at(Mat<float>&) {
+        throw std::logic_error("Abstract class. Shoud be calling overloaded chilid members.");
+		return Mat<float>(1,1);
+	}
+	virtual Mat<float> differential_at(Mat<float>&) {
+        throw std::logic_error("Abstract class. Shoud be calling overloaded chilid members.");
+		return Mat<float>(1,1);
+	}
+	virtual Mat<float> at(Mat<float>&, Mat<float>&) {
+        throw std::logic_error("Abstract class. Shoud be calling overloaded chilid members.");
+		return Mat<float>(1,1);
+	}
+	virtual tuple<Mat<float>,Mat<float>> differential_at(Mat<float>&, Mat<float>&) {
+        throw std::logic_error("Abstract class. Shoud be calling overloaded chilid members.");
+		return {Mat<float>(1,1), Mat<float>(1,1)};
+	}
 };
 
 class LinearFunc : public DiffFunc{
-	bool owns_matp=false;
-	Mat<float>* matp;
 	public:
-	LinearFunc (Mat<float>& L) {
-		matp =  &L;
+	Mat<float> at(Mat<float>& M, Mat<float>&x) {
+		return  M*x;
 	}
-	LinearFunc (int in, int out) {
-		Mat<float>* Mp = new Mat<float>(in, out);
-		matp =  Mp;
-		owns_matp = true; // since we are creating the matrix in the constructor we are encharged of deleting it
+	tuple<Mat<float>,Mat<float>> differential_at(Mat<float>& M,Mat<float>& x) {
+		// Returns two matrices, linearly approximating the change in the output given the inputs
+		// Since the first input is a matrix, the linear approximation assumes it's been flattened. 
+		cout << "inside LinearFunc.differential_at\n";
+		Mat<float> L (M.h, M.size); // super inneficient to implement this way. This matrix will mostly be 0s
+		for (int i=0; i<x.h; i++) {
+			for (int j=0; j<M.h; j++) {
+				L.ind(j, j*x.h + i) = x.ind(i, 0);
+			}
+		}
+		return {L, M};
 	}
-	~LinearFunc() {
-		if(owns_matp) {delete matp;}
-	}
-	Mat<float> at(Mat<float>&x) {
-		Mat<float>& a = *matp;
-		return  (a * x);
-	}
-	Mat<float> differential_at(Mat<float>& x) {
-		return *matp;
-	}
-	void random(float mean, float std) {matp->random(mean, std);}
 };
 
 class Max0: public DiffFunc{
@@ -119,36 +126,35 @@ class Composition: public DiffFunc {
 	}
 };
 
-class NN: public DiffFunc{
-	Composition * cp;
-	public:
-	NN(int in_dim, int hidden_dim, int out_dim) {
-		int layer_num = 3+2; // 3 linear layers + 2 non linearities
-		DiffFunc** func_list = new DiffFunc*[layer_num]; 
+// class NN: public DiffFunc{
+// 	Composition * cp;
+	// public:
+	// NN(int in_dim, int hidden_dim, int out_dim) {
+	// 	int layer_num = 3+2; // 3 linear layers + 2 non linearities
+	// 	DiffFunc** func_list = new DiffFunc*[layer_num]; 
 
-		LinearFunc* L1p = new LinearFunc(in_dim, hidden_dim);
-		*(func_list) = L1p;
-		*(func_list+1) = &max0;
-		LinearFunc* L2p = new LinearFunc(hidden_dim, hidden_dim);
-		*(func_list+2) = L2p;
-		*(func_list+3) = &max0;
-		LinearFunc* L3p = new LinearFunc(hidden_dim, out_dim);
-		*(func_list+4) = L3p;
+	// 	LinearFunc* L1p = new LinearFunc(in_dim, hidden_dim);
+	// 	*(func_list) = L1p;
+	// 	*(func_list+1) = &max0;
+	// 	LinearFunc* L2p = new LinearFunc(hidden_dim, hidden_dim);
+	// 	*(func_list+2) = L2p;
+	// 	*(func_list+3) = &max0;
+	// 	LinearFunc* L3p = new LinearFunc(hidden_dim, out_dim);
+	// 	*(func_list+4) = L3p;
 
-		// Initialize linear layers
-		L1p->random(0, 1);
-		L2p->random(0, 1);
-		L3p->random(0, 1);
-		cp = new Composition(func_list, layer_num);
-	}
-	Mat<float> at(Mat<float>& x) {
-		return cp->at(x);
-	}
-	Mat<float> differential_at(Mat<float>& x) {
-		return cp->differential_at(x);
-	}
-
-};
+	// 	// Initialize linear layers
+	// 	L1p->random(0, 1);
+	// 	L2p->random(0, 1);
+	// 	L3p->random(0, 1);
+	// 	cp = new Composition(func_list, layer_num);
+	// }
+	// Mat<float> at(Mat<float>& x) {
+	// 	return cp->at(x);
+	// }
+	// Mat<float> differential_at(Mat<float>& x) {
+	// 	return cp->differential_at(x);
+	// }
+// };
 
 
 
@@ -163,58 +169,62 @@ int main () {
 	n.ind(1,0) = 1; n.ind(1,1) = 1; n.ind(1,2) = 1;
 	n.ind(2,0) = 0; n.ind(2,1) = 1; n.ind(2,2) = 1;
 
+	cout << "The matrix m \n";
 	m.print();
-	cout << '\n';
+	cout << "The matrix n\n";
 	n.print();
-	cout << '\n';
+	cout << "The product m*n x\n";
 	Mat<float> r = m*n;
 	r.print();
-	cout << '\n';
 
 	Mat<float> x(3,1);
-	x.ind(0,0) = 1; x.ind(0,1) = -1; x.ind(0,2) = 2;
+	x.ind(0,0) = 1; x.ind(1,0) = -1; x.ind(2,0) = 2;
 
-	cout << "the var x: \n";
+	cout << "the vec x: \n";
 	x.print();
 
 	SquareElementWise square;
 	Max0 max0;
-	LinearFunc lin(m);
+	LinearFunc lin;
 	DiffFunc* func_list[] = {&max0, &square};
 	Composition stack(func_list, 2);
-	NN nn(3, 100, 1);
+	// NN nn(3, 100, 1);
 
 	cout << "the square(x): \n";
 	square.at(x).print();
 	cout << "the diff of square(x): \n";
 	square.differential_at(x).print();
-	cout << " ----- ";
+	cout << " ----- \n";
 
 	cout << "the max0(x): \n";
 	max0.at(x).print();
 	cout << "the diff of max0(x): \n";
 	max0.differential_at(x).print();
-	cout << " ----- ";
+	cout << " ----- \n";
 
 	cout << "Lin func with matrix: \n";
 	m.print();
 	cout << "Lin(x): \n";
-	lin.at(x).print();
-	cout << "the diff of lin(x): \n";
-	lin.differential_at(x).print();
-	cout << " ----- ";
-
-	cout << "the stack(x): \n";
-	stack.at(x).print();
-	cout << "the diff of stack(x): \n";
-	stack.differential_at(x).print();
+	lin.at(m, x).print();
+	cout << "the diff of lin(m, x): \n";
+	auto [Lm, Lx] = lin.differential_at(m, x);
+	cout << "linear approx as a funciton of m \n";
+	Lm.print();
+	cout << "linear approx as a funciton of x \n";
+	Lx.print();
 	cout << " ----- \n";
 
-	cout << "the nn(x): \n";
-	nn.at(x).print();
-	cout << "the diff of stack(x): \n";
-	nn.differential_at(x).print();
-	cout << " ----- \n";
+	// cout << "the stack(x): \n";
+	// stack.at(x).print();
+	// cout << "the diff of stack(x): \n";
+	// stack.differential_at(x).print();
+	// cout << " ----- \n";
+
+	// cout << "the nn(x): \n";
+	// nn.at(x).print();
+	// cout << "the diff of stack(x): \n";
+	// nn.differential_at(x).print();
+	// cout << " ----- \n";
 
 
 	return 0;
