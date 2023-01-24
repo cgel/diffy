@@ -25,7 +25,7 @@ class Mat {
 			w=A.w;
 			size=A.size;
 			data = new F[size];
-			memcpy(A.data, data, size*sizeof(F));
+			memcpy(data, A.data, size*sizeof(F));
 		}
 
 		Mat(Mat&& A) {
@@ -47,6 +47,9 @@ class Mat {
 		}
 
 		F& ind(int i, int j){
+            if (i<0 or j<0 or i>=h or j>= w) {
+                throw std::invalid_argument("i, j should be in the range of h, w\n");
+            }
 			return *(data + i*w + j);
 		}
 
