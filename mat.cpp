@@ -86,6 +86,16 @@ class Mat {
 			return M;
 		}
 
+		Mat operator-(const Mat& A) {
+			assert (h == A.h && w == A.w);
+			Mat M(h,w);
+			for (int i=0; i<size; i++ ){
+				*(M.data + i) = *(data+i) -  *(A.data+i);
+			}
+			return M;
+		}
+
+
 		Mat operator*(Mat& A) {
 			assert (w == A.h);
 			Mat M(h,A.w);
@@ -99,6 +109,17 @@ class Mat {
 			return M;
 		}
 
+		Mat operator*(float s) {
+			Mat M(h,w);
+			for (int i=0; i<h; i++ ){
+				for (int j=0; j<w; j++ ){
+					M.ind(i,j) += s*ind(i, j);
+				}
+			}
+			return M;
+		}
+
+
 		bool operator==(Mat& A) {
             if (h != A.h or w != A.w) {return false;}
 			for (int i=0; i<size; i++ ){
@@ -106,4 +127,23 @@ class Mat {
 			}
 			return true;
 		}
+
+        Mat& reshape(int new_h, int new_w) {
+            if (new_h*new_w != size) { throw invalid_argument("size must match");}
+            h = new_h;
+            w = new_w;
+            return *this;
+        }
+
+        Mat& reshape(Mat& A) {
+            if (A.h*A.w != size) { throw invalid_argument("size must match");}
+            h = A.h;
+            w = A.w;
+            return *this;
+        }
 };
+
+template<class F>
+Mat<F> operator*(float s, Mat<F>& M) {
+    return  M*s;
+}
