@@ -85,7 +85,7 @@ class SquareElementWise: public DiffFunc{
 		}
 		return d;
 	}
-};
+} square;
 
 class Composition: public DiffFunc {
 	DiffFunc** func_list;
@@ -190,76 +190,3 @@ void test_nn() {
 	cout << " ======= \n";
 
 }
-
-int main () {
-	cout << "Hello! \n";
-	Mat<float> m(2,3);
-	m.ind(0,0) = 1; m.ind(0,1) = 0; m.ind(0,2) = 1;
-	m.ind(1,0) = 0; m.ind(1,1) = 1; m.ind(1,2) = 1;
-
-	Mat<float> n(3,3);
-	n.ind(0,0) = 0; n.ind(0,1) = 0; n.ind(0,2) = 0;
-	n.ind(1,0) = 1; n.ind(1,1) = 1; n.ind(1,2) = 1;
-	n.ind(2,0) = 0; n.ind(2,1) = 1; n.ind(2,2) = 1;
-
-	cout << "The matrix m \n";
-	m.print();
-	cout << "The matrix n\n";
-	n.print();
-	cout << "The product m*n x\n";
-	Mat<float> r = m*n;
-	r.print();
-
-	Mat<float> x(3,1);
-	x.ind(0,0) = 1; x.ind(1,0) = -1; x.ind(2,0) = 2;
-
-	cout << "the vec x: \n";
-	x.print();
-
-	SquareElementWise square;
-	Max0 max0;
-	LinearFunc lin;
-	DiffFunc* func_list[] = {&max0, &square};
-	Composition stack(func_list, 2);
-	// NN nn(3, 100, 1);
-
-	cout << "the square(x): \n";
-	square.at(x).print();
-	cout << "the diff of square(x): \n";
-	square.differential_at(x).print();
-	cout << " ----- \n";
-
-	cout << "the max0(x): \n";
-	max0.at(x).print();
-	cout << "the diff of max0(x): \n";
-	max0.differential_at(x).print();
-	cout << " ----- \n";
-
-	cout << "Lin func with matrix: \n";
-	m.print();
-	cout << "Lin(x): \n";
-	lin.at(m, x).print();
-	cout << "the diff of lin(m, x): \n";
-	auto [Lm, Lx] = lin.differential_at(m, x);
-	cout << "linear approx as a funciton of m \n";
-	Lm.print();
-	cout << "linear approx as a funciton of x \n";
-	Lx.print();
-	cout << " ----- \n";
-
-	// cout << "the stack(x): \n";
-	// stack.at(x).print();
-	// cout << "the diff of stack(x): \n";
-	// stack.differential_at(x).print();
-	// cout << " ----- \n";
-
-	// cout << "the nn(x): \n";
-	// nn.at(x).print();
-	// cout << "the diff of stack(x): \n";
-	// nn.differential_at(x).print();
-	// cout << " ----- \n";
-
-	test_nn();
-
-	return 0;
-};
