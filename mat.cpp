@@ -188,3 +188,26 @@ Mat<F> operator==(Mat<F>& M, F s) {
 	}
 	return true;
 }
+
+inline const char * const BoolToString(bool b)
+{
+  return b ? "true" : "false";
+}
+void tests() {
+	cout << "Test correctness of matmul \n";
+	Mat<float> m(2,3);
+	m.ind(0,0) = 1; m.ind(0,1) = 0; m.ind(0,2) = 1;
+	m.ind(1,0) = 0; m.ind(1,1) = 1; m.ind(1,2) = 1;
+
+	Mat<float> n(3,3);
+	n.ind(0,0) = 0; n.ind(0,1) = 0; n.ind(0,2) = 0;
+	n.ind(1,0) = 1; n.ind(1,1) = 1; n.ind(1,2) = 1;
+	n.ind(2,0) = 0; n.ind(2,1) = 1; n.ind(2,2) = 1;
+
+    Mat<float> x = m*n;
+
+    Mat<float> y(2,3);
+	y.ind(0,0) = 0; y.ind(0,1) = 1; y.ind(0,2) = 1;
+	y.ind(1,0) = 1; y.ind(1,1) = 2; y.ind(1,2) = 2;
+    cout << "x==y " << BoolToString(y == x) << '\n';
+}
