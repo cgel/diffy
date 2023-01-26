@@ -2,6 +2,8 @@
 #include <iostream>
 #include <assert.h>
 #include <random>
+#include <array>
+#include <cmath>
 using namespace std;
 
 template <class F>
@@ -68,6 +70,13 @@ class Mat {
             return random(0,1);
         }
 
+		float norm(){
+			float x=0;
+			for (int i=0; i<size; i++) {
+				x+= pow(data[i], 2);
+			}
+			return sqrt(x);
+		}
 
 		void print() {
 			for (int i=0; i<size; i++ ){
@@ -146,4 +155,36 @@ class Mat {
 template<class F>
 Mat<F> operator*(float s, Mat<F>& M) {
     return  M*s;
+}
+
+template<class F>
+Mat<F> operator-(float s, Mat<F>& M) {
+    assert(M.size=1);
+    Mat<F> N(1,1);
+    N.ind(0,0) = M.ind(0,0) - s;
+    return  N;
+}
+template<class F>
+Mat<F> operator-(Mat<F>& M, float s) {
+    return s-M;
+}
+
+template<class F>
+Mat<F> operator+(float s, Mat<F>& M) {
+    assert(M.size=1);
+    Mat<F> N(1,1);
+    N.ind(0,0) = M.ind(0,0) + s;
+    return  N;
+}
+template<class F>
+Mat<F> operator+(Mat<F>& M, float s) {
+    return s+M;
+}
+
+template<class F>
+Mat<F> operator==(Mat<F>& M, F s) {
+	for (int i=0; i<M.size; i++){
+		if(M.data[i] != s) {return false;}
+	}
+	return true;
 }
