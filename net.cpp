@@ -137,41 +137,38 @@ class NN_3layer {
 		return h;
 	}
 	tuple<Mat<float>,Mat<float>,Mat<float>,Mat<float>> differential_at(Mat<float>& x, Mat<float>&A, Mat<float>&B, Mat<float>&C) {
-		// We need to keep track of 3 objects. As we compute further hidden layers, we want to know
-		// the derivatives of h w.r.t A, B and C
-		// Mat<float> diff_h_wrt_A,  = linear.at(A,x);
-		// auto [diff_A_to_h, diff_wrt_A] = linear.differential_at(A, x); 
-		// Mat<float> h = linear.at(A,x);
-		// Mat<float> diff_h1_to_h2 = square.differential_at(h);
-		// h = square.at(h);
-
-		// h = linear.at(h);
+		bool debug_mode = false;
 
 		Mat<float> h_by_A, h_by_B, h_by_C, h_by_x, h, h_by_h;
 		tie(h_by_A, h_by_x) = linear.differential_at(A,x);
 		h = linear.at(A,x);
+		if (debug_mode) {cout << "lay1 preact norm: " << h.norm() << endl;}
 
 		h_by_h = max0.differential_at(h);
 		h_by_A = h_by_h * h_by_A;
 		h_by_x = h_by_h * h_by_x;
 		h = max0.at(h);
+		if (debug_mode) {cout << "lay1 norm: " << h.norm() << endl;}
 
 		tie(h_by_B, h_by_h) = linear.differential_at(B,h);
 		h_by_A = h_by_h * h_by_A;
 		h_by_x = h_by_h * h_by_x;
 		h = linear.at(B,h);
+		if (debug_mode) {cout << "lay2 preact norm: " << h.norm() << endl;}
 
 		h_by_h = max0.differential_at(h);
 		h_by_B = h_by_h * h_by_B;
 		h_by_A = h_by_h * h_by_A;
 		h_by_x = h_by_h * h_by_x;
 		h = max0.at(h);
+		if (debug_mode) {cout << "lay2 norm: " << h.norm() << endl;}
 
 		tie(h_by_C, h_by_h) = linear.differential_at(C,h);
 		h_by_B = h_by_h * h_by_B;
 		h_by_A = h_by_h * h_by_A;
 		h_by_x = h_by_h * h_by_x;
 		h = linear.at(C,h);
+		if (debug_mode) {cout << "output norm: " << h.norm() << endl;}
 
 		return {h_by_x, h_by_A, h_by_B, h_by_C};
 	}
