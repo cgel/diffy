@@ -38,7 +38,7 @@ Mat<float> image_to_mat(array<int, 28*28>& image) {
 }
 
 void mnist_train() {
-    MNIST mnist;
+    MNIST mnist(10,10);
     int hidden_dim = 50;
     int input_dim = 28*28;
 
@@ -46,12 +46,11 @@ void mnist_train() {
     // A.random(0, sqrt(2/input_dim)); B.random(0, sqrt(2/hidden_dim)); C.random(0, sqrt(2/hidden_dim));
     A.random(0, (2./input_dim)); B.random(0, (2./hidden_dim)); C.random(0, (2./hidden_dim));
     
-    datapoint_type datapoint = mnist.train_datapoints[0];
-
     Mat<float> Lx, LA, LB, LC, loss;
-    float lr=0.01;
+    float lr=0.001;
     Mat<float> err;
-    for (int t=0; t<100; t++) {
+    for (int t=0; t<1000; t++) {
+        datapoint_type datapoint = mnist.train_datapoints[t%mnist.train_size];
         Mat<float> img = image_to_mat(datapoint.image);
 	    Mat<float> y = nn.at(img,A,B,C);
         err = y-datapoint.label;

@@ -39,15 +39,22 @@ class MNIST {
     // Cannot allocate the entire array on the stack
     datapoint_type* train_datapoints;
     datapoint_type* test_datapoints;
+    int train_size;
+    int test_size;
 
-    MNIST() {
-        train_datapoints = new datapoint_type[60000];
-        test_datapoints = new datapoint_type[10000];
+    MNIST(int tr_size=60000, int te_size=10000) {
+        assert( tr_size>0 and tr_size<=60000);
+        assert( te_size>0 and te_size<=10000);
+        train_size= tr_size;
+        test_size= te_size;
+
+        train_datapoints = new datapoint_type[train_size];
+        test_datapoints = new datapoint_type[test_size];
         string line;
         ifstream trfile;
         trfile.open("./datasets/mnist_train.csv");
         if (trfile.is_open()) {
-            for (int i=0; i<60000; i++) {
+            for (int i=0; i<train_size; i++) {
                 getline(trfile, line);
                 train_datapoints[i] = parse_line(line); 
             }
@@ -58,7 +65,7 @@ class MNIST {
         ifstream tefile;
         tefile.open("./datasets/mnist_test.csv");
         if (tefile.is_open()) {
-            for (int i=0; i<10000; i++) {
+            for (int i=0; i<test_size; i++) {
                 getline(tefile, line);
                 test_datapoints[i] = parse_line(line); 
             }
