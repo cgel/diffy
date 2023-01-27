@@ -172,18 +172,27 @@ class NN_3layer {
 
 		return {h_by_x, h_by_A, h_by_B, h_by_C};
 	}
+
+	tuple<Mat<float>,Mat<float>,Mat<float>,Mat<float>> differential_at_backprop(Mat<float>& x, Mat<float>&A, Mat<float>&B, Mat<float>&C) {
+		Mat<float> h1 = linear.at(A,x);
+		Mat<float> h2 = max0.at(h1);
+		Mat<float> h3 = linear.at(B,h2);
+		Mat<float> h4 = max0.at(h3);
+		Mat<float> h5 = linear.at(C,h4);
+
+		Mat<float> h_by_A, h_by_B, h_by_C, h_by_x, h, h_by_h;
+		auto [h5_by_C, h5_by_h4] = linear.differential_at(C,h4);
+		auto h4_by_h3 = max0.differential_at(h3);
+		Mat<float> h5_by_h3 = h5_by_h4 * h4_by_h3;
+		auto [h3_by_B, h3_by_h2] = linear.differential_at(B,h2);
+		Mat<float> h5_by_h2 = h5_by_h3 * h3_by_h2;
+		Mat<float> h5_by_B = h5_by_h3 * h3_by_B;
+		auto h2_by_h1 = max0.differential_at(h1);
+		Mat<float> h5_by_h1 = h5_by_h2 * h2_by_h1;
+		auto [h1_by_A, h1_by_x] = linear.differential_at(A,x);
+		Mat<float> h5_by_x = h5_by_h1 * h1_by_x;
+		Mat<float> h5_by_A = h5_by_h1 * h1_by_A;
+		return {h5_by_x, h5_by_A, h5_by_B, h5_by_C};
+	}
+
 } nn;
-
-void test_nn() {
-	Mat<float> A(3,3), B(3,3), C(1,3), x(3,1);
-	A.random(); B.random(); C.random();
-	x.ind(0,0) = 1; x.ind(1,0) = -1; x.ind(2,0) = 2;
-	Mat<float> y = nn.at(x,A,B,C);
-	cout << "Output of the NN is: \n";
-	y.print();
-	cout << " ======= \n";
-	cout << "Computing the differential of the NN: \n";
-	nn.differential_at(x,A,B,C);
-	cout << " ======= \n";
-
-}
