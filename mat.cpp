@@ -104,13 +104,26 @@ class Mat {
 			return M;
 		}
 
+		// Mat operator*(Mat& A) {
+		// 	// Should be slower due to cash misses
+		// 	assert (w == A.h);
+		// 	Mat M(h,A.w);
+		// 	for (int i=0; i<M.h; i++ ){
+		// 		for (int j=0; j<M.w; j++ ){
+		// 			for (int k=0; k<w; k++ ){
+		// 				M.ind(i,j) += ind(i, k) *  A.ind(k,j);
+		// 			}
+		// 		}
+		// 	}
+		// 	return M;
+		// }
 
 		Mat operator*(Mat& A) {
 			assert (w == A.h);
 			Mat M(h,A.w);
-			for (int i=0; i<M.h; i++ ){
-				for (int j=0; j<M.w; j++ ){
-					for (int k=0; k<w; k++ ){
+			for (int k=0; k<w; k++ ){
+				for (int i=0; i<M.h; i++ ){
+					for (int j=0; j<M.w; j++ ){
 						M.ind(i,j) += ind(i, k) *  A.ind(k,j);
 					}
 				}
@@ -193,7 +206,8 @@ inline const char * const BoolToString(bool b)
 {
   return b ? "true" : "false";
 }
-void tests() {
+
+void mat_tests() {
 	cout << "Test correctness of matmul \n";
 	Mat<float> m(2,3);
 	m.ind(0,0) = 1; m.ind(0,1) = 0; m.ind(0,2) = 1;
