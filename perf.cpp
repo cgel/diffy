@@ -14,17 +14,22 @@ void NN_perf() {
     A.random(0, (2./input_dim)); B.random(0, (2./hidden_dim)); C.random(0, (2./hidden_dim));
     
     Mat<float> Lx, LA, LB, LC, loss;
-    int num = 1;
     Mat<float> img(28*28,1);
 	cout << "Average time of forward pass:\n";
     auto start = high_resolution_clock::now();
+    int num = 1;
     for (int t=0; t<num; t++) {
 	    Mat<float> y = nn.at(img,A,B,C);
-        cout << t << " - " << y.ind(0,0) << endl;
     }
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start)/num;
-    cout << duration.count() << " milliseconds\n";
+    auto duration_micro = duration_cast<microseconds>(stop - start)/num;
+    if (duration.count() == 0) {
+        cout << duration_micro.count() << " microseconds\n";
+    }
+    else {
+        cout << duration.count() << " milliseconds\n";
+    }
 
 	cout << "Average time to compute gradients (forward mode):\n";
     start = high_resolution_clock::now();
@@ -34,6 +39,16 @@ void NN_perf() {
     stop = high_resolution_clock::now();
     duration = duration_cast<milliseconds>(stop - start)/num;
     cout << duration.count() << " milliseconds\n";
+
+	cout << "Average time to compute gradients (backward mode):\n";
+    start = high_resolution_clock::now();
+    for (int t=0; t<num; t++) {
+        tie(Lx, LA, LB, LC) = nn.differential_at_backprop(img,A,B,C);
+    }
+    stop = high_resolution_clock::now();
+    duration = duration_cast<milliseconds>(stop - start)/num;
+    cout << duration.count() << " milliseconds\n";
+
 }
 
 void matmul_perf() {
@@ -71,4 +86,6 @@ void matmul_perf() {
 
 int main () {
     NN_perf();
+    matmul_perf();
+    mat_tests();
 }
